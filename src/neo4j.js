@@ -7,7 +7,6 @@ const driver = neo4j.driver(
   AURA_ENDPOINT,
   neo4j.auth.basic(USERNAME, PASSWORD)
 );
-
 const ogm = new OGM({ typeDefs, driver });
 const User = ogm.model("User");
 

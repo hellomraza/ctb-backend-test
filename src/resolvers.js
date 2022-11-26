@@ -11,10 +11,9 @@ const resolvers = {
         const { email, password, fullName, gotra } = input;
         const encPassword = await bcrypt.hash(password, 10);
         const userf = await User.find({ where: { email } });
-        if (userf.length > 0) {
-          return new ApolloError("User already exists", "BAD_REQUEST");
-        }
-        const user = await User.create({
+        if (userf.length > 0)
+          new ApolloError("User already exists", "BAD_REQUEST");
+        await User.create({
           input: [{ password: encPassword, fullName, gotra, email }],
         });
         return { status: 200, message: "User created successfully" };
