@@ -2,6 +2,7 @@ const { gql } = require("apollo-server");
 
 const typeDefs = gql`
   type User {
+    # id: ID! @id
     email: String! @id(autogenerate: false, unique: true)
     fullName: String!
     gotra: String!
@@ -45,6 +46,23 @@ const typeDefs = gql`
   type Mutation {
     signUp(input: UserInput!): Response!
     signIn(input: SigniInInput!): Response!
+    addParentAndChildren(parent: ID!, children: ID!): Response!
+      @cypher(
+        statement: """
+        MATCH (parent:User {id: $parent}), (children:User {id: $children})
+        MERGE (parent)-[:CHILDREN]->(children)
+        RETURN parent, children
+        """
+      )
+      @auth(
+        rules: [
+          {
+            isAuthenticated: true
+            operations: [CREATE, UPDATE, DELETE, CONNECT, DISCONNECT]
+            where: { email: { _eq: "$jwt.sub" } }
+          }
+        ]
+      )
   }
 `;
 
