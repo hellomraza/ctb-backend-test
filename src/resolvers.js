@@ -1,44 +1,48 @@
 const { User } = require("./neo4j");
-const { v4: uuidv4 } = require("uuid");
+const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { ApolloError } = require("apollo-server");
+const { GraphQLError } = require("graphql");
 
 const resolvers = {
   Mutation: {
-    createUser: async (_, args, context) => {
-      const { name, email, password, surname } = args.input;
-
-      if (!name || !email || !password || !surname)
-        throw new Error("Missing required fields");
-
-      const [existing] = await User.find({ where: { email } });
-
-      if (existing) throw new Error("User already exists");
-
-      const newUser = await User.create({
-        input: [{ id: uuidv4(), ...args.input }],
-      });
-
-      return newUser.users[0];
+    signUp: async (_, { input }) => {
+      try {
+        const { email, password, fullName, gotra } = input;
+        const encPassword = await bcrypt.hash(password, 10);
+        const userf = await User.find({ where: { email } });
+        if (userf.length > 0) {
+          return new ApolloError("User already exists", "BAD_REQUEST");
+        }
+        const user = await User.create({
+          input: [{ password: encPassword, fullName, gotra, email }],
+        });
+        return { status: 200, message: "User created successfully" };
+      } catch (error) {
+        console.log(error);
+        return new ApolloError(error.message, 500);
+      }
     },
+    signIn: async (_, { input }) => {
+      try {
+        const { email, password } = input;
+        const [user] = await User.find({ where: { email } });
+        if (!user) new ApolloError("User not found", 404);
+        const isPasswordCorrect = await bcrypt.compare(
+          password,
+          user[0].password
+        );
+        if (!isPasswordCorrect) new ApolloError("Password is incorrect", 401);
 
-    login: async (_, args, context) => {
-      const { email, password } = args;
+        const token = jwt.sign({ sub: email }, "SECRET", {
+          algorithm: "HS256",
+        });
 
-      if (!email || !password) throw new Error("Missing required fields");
-
-      const [existing] = await User.find({ where: { email } });
-
-      if (!existing) throw new Error("User not found");
-
-      if (existing.password !== password)
-        throw new Error("Wrong password or email");
-
-      const token = jwt.sign(
-        { id: existing.id, email: existing.email },
-        "SECRET"
-      );
-
-      return { token };
+        return { status: 200, message: "User logged in successfully", token };
+      } catch (error) {
+        console.log(error);
+        return new ApolloError(error.message, 500);
+      }
     },
   },
 };
