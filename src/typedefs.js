@@ -6,6 +6,7 @@ const typeDefs = gql`
     email: String! @id(autogenerate: false, unique: true)
     fullName: String!
     gotra: String!
+    gender: String @default(value: "male")
     childrens: [User!]! @relationship(type: "CHILDREN", direction: OUT)
     parents: User @relationship(type: "CHILDREN", direction: IN)
     password: String!
@@ -28,6 +29,7 @@ const typeDefs = gql`
     email: String!
     password: String!
     fullName: String!
+    gender: String!
     gotra: String!
   }
 
@@ -36,6 +38,25 @@ const typeDefs = gql`
     password: String!
   }
 
+  type Query {
+    getAllFamilies: [User!]!
+      @cypher(
+        statement: """
+        MATCH (u:User)
+        WHERE NOT (u)<-[:CHILDREN]-()
+        MATCH (u)-[:CHILDREN*]->(c:User)
+        RETURN u ORDER BY c.lenght ASC
+        """
+      )
+    searchUser: [User!]!
+      @cypher(
+        statement: """
+                CALL db.index.fulltext.queryNodes("searchUsers","fullName:(ayes*)") YIELD node, score
+        WITH node, score
+        RETURN node
+        """
+      )
+  }
   type Response {
     status: Int!
     message: String!
@@ -46,23 +67,24 @@ const typeDefs = gql`
   type Mutation {
     signUp(input: UserInput!): Response!
     signIn(input: SigniInInput!): Response!
-    addParentAndChildren(parent: ID!, children: ID!): Response!
+    addChildren(input: UserInput!): Response!
       @cypher(
         statement: """
-        MATCH (parent:User {id: $parent}), (children:User {id: $children})
-        MERGE (parent)-[:CHILDREN]->(children)
-        RETURN parent, children
+        MATCH (n:User)
+        WHERE n.email = $input.email
+        CREATE (n)-[:CHILDREN]->(u:User {email: $input.email, password: $input.password, fullName: $input.fullName, gotra: $input.gotra})
+        RETURN u
         """
       )
-      @auth(
-        rules: [
-          {
-            isAuthenticated: true
-            operations: [CREATE, UPDATE, DELETE, CONNECT, DISCONNECT]
-            where: { email: { _eq: "$jwt.sub" } }
-          }
-        ]
-      )
+    # @auth(
+    #   rules: [
+    #     {
+    #       isAuthenticated: true
+    #       operations: [CREATE, UPDATE, DELETE, CONNECT, DISCONNECT]
+    #       where: { email: { _eq: "$jwt.sub" } }
+    #     }
+    #   ]
+    # )
   }
 `;
 

@@ -7,8 +7,8 @@ const signUp = async (_, { input }) => {
   try {
     const { email, password, fullName, gotra } = input;
     const encPassword = await bcrypt.hash(password, 10);
-    const userf = await User.find({ where: { email } });
-    if (userf.length > 0) new ApolloError("User already exists", "BAD_REQUEST");
+    const [user] = await User.find({ where: { email } });
+    if (!user) new ApolloError("User already exists", "BAD_REQUEST");
     await User.create({
       input: [{ password: encPassword, fullName, gotra, email }],
     });
@@ -19,16 +19,14 @@ const signUp = async (_, { input }) => {
   }
 };
 
-const signIn = async (_, { input }, context) => {
+const signIn = async (_, { input }) => {
   try {
     const { email, password } = input;
     const [user] = await User.find({ where: { email } });
     if (!user) new ApolloError("User not found", 404);
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) new ApolloError("Password is incorrect", 401);
-    //  set token in cookie
     const token = jwt.sign({ sub: email }, "SECRET", { algorithm: "HS256" });
-
     return { status: 200, message: "User logged in successfully", token };
   } catch (error) {
     console.log(error);
