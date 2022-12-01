@@ -44,14 +44,20 @@ const typeDefs = gql`
         statement: """
         MATCH (u:User)
         WHERE NOT (u)<-[:CHILDREN]-()
-        MATCH (u)-[:CHILDREN*]->(c:User)
-        RETURN u ORDER BY c.lenght ASC
+        WITH u, size((u)-[:CHILDREN]->()) as childrenCount
+        RETURN u { .*, childrenCount: childrenCount }
         """
       )
-    searchUser: [User!]!
+    createFullTextIndex: Boolean!
       @cypher(
         statement: """
-                CALL db.index.fulltext.queryNodes("searchUsers","fullName:(ayes*)") YIELD node, score
+        CREATE FULLTEXT INDEX searchUser FOR (n:User) ON EACH [n.fullName, n.email, n.gotra]
+        """
+      )
+    searchUser(query: String): [User!]!
+      @cypher(
+        statement: """
+        CALL db.index.fulltext.queryNodes("searchUsers",$query) YIELD node, score
         WITH node, score
         RETURN node
         """
@@ -67,6 +73,12 @@ const typeDefs = gql`
   type Mutation {
     signUp(input: UserInput!): Response!
     signIn(input: SigniInInput!): Response!
+    createFullTextIndex: Boolean!
+      @cypher(
+        statement: """
+        CREATE FULLTEXT INDEX searchUser FOR (n:User) ON EACH [n.fullName, n.email, n.gotra]
+        """
+      )
     addChildren(input: UserInput!): Response!
       @cypher(
         statement: """
