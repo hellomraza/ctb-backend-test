@@ -1,0 +1,13 @@
+{
+  "apps": [
+    {
+      "name": "ctb",
+      "script": "src/index.js",
+      "exec_mode": "cluster",
+      "env": {
+        "NODE_ENV": "production",
+        "PORT": 4001
+      }
+    }
+  ]
+}

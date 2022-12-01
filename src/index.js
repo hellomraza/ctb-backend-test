@@ -13,7 +13,12 @@ const neo4jGraphQL = new Neo4jGraphQL({
 });
 
 Promise.all([neo4jGraphQL.getSchema(), ogm.init()]).then(([schema]) => {
-  const server = new ApolloServer({ schema, context: ({ req }) => ({ req }) });
+  const server = new ApolloServer({
+    playground: true,
+    introspection: true,
+    schema,
+    context: ({ req }) => ({ req }),
+  });
   server
     .listen({ port: 4001 })
     .then(({ url }) => console.log(`🚀 Server ready at ${url}`));
