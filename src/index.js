@@ -15,7 +15,7 @@ const neo4jGraphQL = new Neo4jGraphQL({
 Promise.all([neo4jGraphQL.getSchema(), ogm.init()]).then(([schema]) => {
   const server = new ApolloServer({
     playground: true,
-    introspection: false,
+    introspection: process.env.NODE_ENV !== "production",
     schema,
     cache: "bounded",
     persistedQueries: false,
