@@ -17,6 +17,8 @@ Promise.all([neo4jGraphQL.getSchema(), ogm.init()]).then(([schema]) => {
     playground: true,
     introspection: true,
     schema,
+    cache: "bounded",
+    persistedQueries: false,
     context: ({ req }) => ({ req }),
   });
   server
