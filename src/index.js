@@ -1,9 +1,12 @@
+require("dotenv").config();
 const { Neo4jGraphQL } = require("@neo4j/graphql");
 const { ApolloServer } = require("apollo-server");
 const { Neo4jGraphQLAuthJWTPlugin } = require("@neo4j/graphql-plugin-auth");
 const resolvers = require("./resolvers");
 const typeDefs = require("./typedefs");
 const { ogm, driver } = require("./neo4j");
+
+console.log(process.env);
 
 const neo4jGraphQL = new Neo4jGraphQL({
   typeDefs,

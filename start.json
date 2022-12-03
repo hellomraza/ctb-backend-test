@@ -6,7 +6,9 @@
       "exec_mode": "cluster",
       "env": {
         "NODE_ENV": "production",
-        "PORT": 4001
+        "PORT": 4001,
+        "GOOGLE_CLIENT_ID": "19124726627-voilbbngs7nomu30gn6mqmrbrvbqkeoa.apps.googleusercontent.com",
+        "GOOGLE_CLIENT_SECRET":"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"
       }
     }
   ]

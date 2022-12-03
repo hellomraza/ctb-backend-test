@@ -73,6 +73,7 @@ const typeDefs = gql`
   type Mutation {
     signUp(input: UserInput!): Response!
     signIn(input: SigniInInput!): Response!
+    googleAuth(idToken: String!): Response!
     createFullTextIndex: Boolean!
       @cypher(
         statement: """
