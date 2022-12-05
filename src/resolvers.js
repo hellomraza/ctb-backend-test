@@ -47,18 +47,30 @@ const googleAuth = async (_, { idToken }) => {
     const { email, name: fullName, family_name, picture } = payload;
     const response = await User.find({ where: { email } });
     if (response.length === 0) {
+      const user = { fullName, email, family_name, picture };
       await User.create({
-        input: [{ fullName, email, family_name, picture }],
+        input: [user],
       });
       const token = GlobalController.createToken({ email });
-      return { status: 200, message: "User logged in successfully", token };
+      return {
+        status: 200,
+        message: "User logged in successfully",
+        token,
+        payload: user,
+      };
     } else {
+      const [user] = response;
       await User.update({
         where: { email },
         update: { picture },
       });
       const token = GlobalController.createToken({ email });
-      return { status: 200, message: "User logged in successfully", token };
+      return {
+        status: 200,
+        message: "User logged in successfully",
+        token,
+        payload: user,
+      };
     }
   } catch (error) {
     console.log(error);
