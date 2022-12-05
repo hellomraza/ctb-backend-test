@@ -6,8 +6,6 @@ const resolvers = require("./resolvers");
 const typeDefs = require("./typedefs");
 const { ogm, driver } = require("./neo4j");
 
-console.log(process.env);
-
 const neo4jGraphQL = new Neo4jGraphQL({
   typeDefs,
   driver,

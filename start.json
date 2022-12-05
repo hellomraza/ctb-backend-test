@@ -7,8 +7,8 @@
       "env": {
         "NODE_ENV": "production",
         "PORT": 4001,
-        "GOOGLE_CLIENT_ID": "19124726627-voilbbngs7nomu30gn6mqmrbrvbqkeoa.apps.googleusercontent.com",
-        "GOOGLE_CLIENT_SECRET":"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"
+        "GOOGLE_CLIENT_ID": "127860864284-m6f7nb9ui7u1tdbgi45rsl07rjj4950v.apps.googleusercontent.com",
+        "GOOGLE_CLIENT_SECRET":"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"
       }
     }
   ]
