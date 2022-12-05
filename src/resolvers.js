@@ -41,6 +41,7 @@ const signIn = async (_, { input }) => {
 const googleAuth = async (_, { idToken }) => {
   try {
     const { payload } = await client.verifyIdToken({ idToken, audience });
+    console.log({ payload });
     if (!payload.email_verified)
       return new ApolloError("Email not verified", 401);
 
