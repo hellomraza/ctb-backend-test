@@ -46,7 +46,9 @@ const googleAuth = async (_, { idToken }) => {
       return new ApolloError("Email not verified", 401);
 
     const { email, name: fullName, family_name } = payload;
-    const [user] = await User.find({ where: { email: payload.email } });
+    const response = await User.find({ where: { email } });
+    console.log({ response });
+    const [user] = response;
     if (user)
       return {
         status: 200,
