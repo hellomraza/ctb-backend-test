@@ -53,6 +53,10 @@ const googleAuth = async (_, { idToken }) => {
       const token = jwt.sign({ sub: email }, "SECRET", { algorithm: "HS256" });
       return { status: 200, message: "User logged in successfully", token };
     } else {
+      await User.update({
+        where: { email },
+        update: { picture },
+      });
       const token = jwt.sign({ sub: email }, "SECRET", { algorithm: "HS256" });
       return { status: 200, message: "User logged in successfully", token };
     }
