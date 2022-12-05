@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { ApolloError } = require("apollo-server");
 const { OAuth2Client } = require("google-auth-library");
+const GlobalController = require("./utils/globalcontroller");
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const audience = process.env.GOOGLE_CLIENT_ID;
@@ -30,7 +31,7 @@ const signIn = async (_, { input }) => {
     if (!user) new ApolloError("User not found", 404);
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) new ApolloError("Password is incorrect", 401);
-    const token = jwt.sign({ sub: email }, "SECRET", { algorithm: "HS256" });
+    const token = GlobalController.createToken({ email });
     return { status: 200, message: "User logged in successfully", token };
   } catch (error) {
     console.log(error);
@@ -50,14 +51,14 @@ const googleAuth = async (_, { idToken }) => {
       await User.create({
         input: [{ fullName, email, family_name, picture }],
       });
-      const token = jwt.sign({ sub: email }, "SECRET", { algorithm: "HS256" });
+      const token = GlobalController.createToken({ email });
       return { status: 200, message: "User logged in successfully", token };
     } else {
       await User.update({
         where: { email },
         update: { picture },
       });
-      const token = jwt.sign({ sub: email }, "SECRET", { algorithm: "HS256" });
+      const token = GlobalController.createToken({ email });
       return { status: 200, message: "User logged in successfully", token };
     }
   } catch (error) {

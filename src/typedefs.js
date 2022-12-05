@@ -15,15 +15,7 @@ const typeDefs = gql`
     lastModified: DateTime @timestamp
   }
   extend type User
-    @auth(
-      rules: [
-        {
-          isAuthenticated: true
-          operations: [UPDATE, DELETE, CONNECT, DISCONNECT]
-          where: { email: { _eq: "$jwt.sub" } }
-        }
-      ]
-    )
+    @auth(rules: [{ isAuthenticated: true }, { allow: { email: "$jwt.sub" } }])
 
   input UserInput {
     email: String!
@@ -44,10 +36,11 @@ const typeDefs = gql`
         statement: """
         MATCH (u:User)
         WHERE NOT (u)<-[:CHILDREN]-()
-        WITH u, size((u)-[:CHILDREN]->()) as childrenCount
-        RETURN u { .*, childrenCount: childrenCount }
+        RETURN u
         """
       )
+      @auth(rules: [{ isAuthenticated: true }])
+
     createFullTextIndex: Boolean!
       @cypher(
         statement: """
@@ -63,6 +56,7 @@ const typeDefs = gql`
         """
       )
   }
+
   type Response {
     status: Int!
     message: String!
