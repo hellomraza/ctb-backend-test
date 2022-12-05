@@ -45,24 +45,18 @@ const googleAuth = async (_, { idToken }) => {
     if (!payload.email_verified)
       return new ApolloError("Email not verified", 401);
 
-    const { email, name: fullName, family_name } = payload;
+    const { email, name: fullName, family_name, picture } = payload;
     const response = await User.find({ where: { email } });
-    console.log({ response });
-    const [user] = response;
-    if (user)
-      return {
-        status: 200,
-        message: "User logged in successfully",
-        token: idToken,
-      };
-    await User.create({
-      input: [{ password: "password", fullName, gotra: family_name, email }],
-    });
-    return {
-      status: 200,
-      message: "User created successfully",
-      token: idToken,
-    };
+    if (response.length === 0) {
+      await User.create({
+        input: [{ fullName, email, family_name, picture }],
+      });
+      const token = jwt.sign({ sub: email }, "SECRET", { algorithm: "HS256" });
+      return { status: 200, message: "User logged in successfully", token };
+    } else {
+      const token = jwt.sign({ sub: email }, "SECRET", { algorithm: "HS256" });
+      return { status: 200, message: "User logged in successfully", token };
+    }
   } catch (error) {
     console.log(error);
     return new ApolloError(error.message, 500);
