@@ -10,6 +10,7 @@ const typeDefs = gql`
     childrens: [User!]! @relationship(type: "CHILDREN", direction: OUT)
     parents: User @relationship(type: "CHILDREN", direction: IN)
     password: String!
+    picture: String
     createdAt: DateTime @timestamp(operations: [CREATE])
     updatedAt: DateTime @timestamp(operations: [UPDATE])
     lastModified: DateTime @timestamp
