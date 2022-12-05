@@ -1,6 +1,5 @@
 const { User } = require("./neo4j");
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
 const { ApolloError } = require("apollo-server");
 const { OAuth2Client } = require("google-auth-library");
 const GlobalController = require("./utils/globalcontroller");
