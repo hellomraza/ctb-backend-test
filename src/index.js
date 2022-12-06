@@ -10,7 +10,9 @@ const neo4jGraphQL = new Neo4jGraphQL({
   typeDefs,
   driver,
   resolvers,
-  plugins: { auth: new Neo4jGraphQLAuthJWTPlugin({ secret: "SECRET" }) },
+  plugins: {
+    auth: new Neo4jGraphQLAuthJWTPlugin({ secret: process.env.JWT_SECRET }),
+  },
 });
 
 Promise.all([neo4jGraphQL.getSchema(), ogm.init()]).then(([schema]) => {
