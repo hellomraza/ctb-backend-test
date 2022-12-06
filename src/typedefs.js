@@ -5,7 +5,7 @@ const typeDefs = gql`
     # id: ID! @id
     email: String! @id(autogenerate: false, unique: true)
     name: String!
-    gotra: String
+    familyName: String
     gender: String @default(value: "male")
     childrens: [User!]! @relationship(type: "CHILDREN", direction: OUT)
     parents: User @relationship(type: "CHILDREN", direction: IN)
@@ -26,7 +26,7 @@ const typeDefs = gql`
     password: String!
     name: String!
     gender: String!
-    gotra: String!
+    familyName: String!
   }
 
   input SigniInInput {
@@ -78,7 +78,7 @@ const typeDefs = gql`
         statement: """
         MATCH (n:User)
         WHERE n.email = $input.email
-        CREATE (n)-[:CHILDREN]->(u:User {email: $input.email, password: $input.password, name: $input.name, gotra: $input.gotra})
+        CREATE (n)-[:CHILDREN]->(u:User {email: $input.email, password: $input.password, name: $input.name, familyName: $input.familyName})
         RETURN u
         """
       )

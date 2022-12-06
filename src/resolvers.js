@@ -9,12 +9,12 @@ const audience = process.env.GOOGLE_CLIENT_ID;
 
 const signUp = async (_, { input }) => {
   try {
-    const { email, password, name, gotra } = input;
+    const { email, password, name, familyName } = input;
     const encPassword = await bcrypt.hash(password, 10);
     const [user] = await User.find({ where: { email } });
     if (!user) new ApolloError("User already exists", "BAD_REQUEST");
     await User.create({
-      input: [{ password: encPassword, name, gotra, email }],
+      input: [{ password: encPassword, name, familyName, email }],
     });
     return { status: 200, message: "User created successfully" };
   } catch (error) {
@@ -46,7 +46,7 @@ const googleAuth = async (_, { idToken }) => {
     const { email, name, family_name, picture } = payload;
     const response = await User.find({ where: { email } });
     if (response.length === 0) {
-      const user = { name, email, family_name, picture };
+      const user = { name, email, familyName: family_name, picture };
       await User.create({ input: [user] });
       const token = GlobalController.createToken({ email });
       return {
