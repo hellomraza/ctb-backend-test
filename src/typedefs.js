@@ -12,6 +12,8 @@ const typeDefs = gql`
     password: String
     picture: String
     DOB: String
+    alive: Boolean @default(value: true)
+    anonymous: Boolean
     createdAt: DateTime @timestamp(operations: [CREATE])
     updatedAt: DateTime @timestamp(operations: [UPDATE])
     lastModified: DateTime @timestamp
