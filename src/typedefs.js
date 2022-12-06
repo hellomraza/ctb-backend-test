@@ -5,12 +5,13 @@ const typeDefs = gql`
     # id: ID! @id
     email: String! @id(autogenerate: false, unique: true)
     name: String!
-    gotra: String!
+    gotra: String
     gender: String @default(value: "male")
     childrens: [User!]! @relationship(type: "CHILDREN", direction: OUT)
     parents: User @relationship(type: "CHILDREN", direction: IN)
-    password: String!
+    password: String
     picture: String
+    DOB: String
     createdAt: DateTime @timestamp(operations: [CREATE])
     updatedAt: DateTime @timestamp(operations: [UPDATE])
     lastModified: DateTime @timestamp
@@ -36,12 +37,13 @@ const typeDefs = gql`
   }
 
   type Query {
-    getAllFamilies: [User!]!
+    getAllFamilies: [getAllFamiliesResponse!]!
       @cypher(
         statement: """
         MATCH (u:User)
         WHERE NOT (u)<-[:CHILDREN]-()
-        RETURN u
+        WHERE size((u)-[:CHILDREN]->()) > 3
+        RETURN u.name as name
         """
       )
       @auth(rules: [{ isAuthenticated: true }])
