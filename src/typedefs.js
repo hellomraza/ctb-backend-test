@@ -69,14 +69,12 @@ const typeDefs = gql`
     signUp(input: UserInput!): Response!
     signIn(input: SigniInInput!): Response!
     googleAuth(idToken: String!): Response!
-
     createFullTextIndex: Boolean!
       @cypher(
         statement: """
         CREATE FULLTEXT INDEX searchUser FOR (n:User) ON EACH [n.fullName, n.email, n.gotra]
         """
       )
-x
     addChildren(input: UserInput!): Response!
       @cypher(
         statement: """
