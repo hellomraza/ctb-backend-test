@@ -4,7 +4,7 @@ const typeDefs = gql`
   type User {
     # id: ID! @id
     email: String! @id(autogenerate: false, unique: true)
-    fullName: String!
+    name: String!
     gotra: String!
     gender: String @default(value: "male")
     childrens: [User!]! @relationship(type: "CHILDREN", direction: OUT)
@@ -21,7 +21,7 @@ const typeDefs = gql`
   input UserInput {
     email: String!
     password: String!
-    fullName: String!
+    name: String!
     gender: String!
     gotra: String!
   }
@@ -29,6 +29,10 @@ const typeDefs = gql`
   input SigniInInput {
     email: String!
     password: String!
+  }
+
+  type getAllFamiliesResponse {
+    name: String!
   }
 
   type Query {
@@ -41,19 +45,15 @@ const typeDefs = gql`
         """
       )
       @auth(rules: [{ isAuthenticated: true }])
-
-    createFullTextIndex: Boolean!
+    searchUser(query: String, limit: Int, skip: Int): [User!]!
       @cypher(
         statement: """
-        CREATE FULLTEXT INDEX searchUser FOR (n:User) ON EACH [n.fullName, n.email, n.gotra]
-        """
-      )
-    searchUser(query: String): [User!]!
-      @cypher(
-        statement: """
-        CALL db.index.fulltext.queryNodes("searchUsers",$query) YIELD node, score
+        CALL db.index.fulltext.queryNodes('searchUser', $query) YIELD node, score
         WITH node, score
         RETURN node
+        ORDER BY node.name ASC
+        SKIP $skip
+        LIMIT $limit
         """
       )
   }
@@ -69,18 +69,12 @@ const typeDefs = gql`
     signUp(input: UserInput!): Response!
     signIn(input: SigniInInput!): Response!
     googleAuth(idToken: String!): Response!
-    createFullTextIndex: Boolean!
-      @cypher(
-        statement: """
-        CREATE FULLTEXT INDEX searchUser FOR (n:User) ON EACH [n.fullName, n.email, n.gotra]
-        """
-      )
     addChildren(input: UserInput!): Response!
       @cypher(
         statement: """
         MATCH (n:User)
         WHERE n.email = $input.email
-        CREATE (n)-[:CHILDREN]->(u:User {email: $input.email, password: $input.password, fullName: $input.fullName, gotra: $input.gotra})
+        CREATE (n)-[:CHILDREN]->(u:User {email: $input.email, password: $input.password, name: $input.name, gotra: $input.gotra})
         RETURN u
         """
       )
