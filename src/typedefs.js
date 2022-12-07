@@ -44,6 +44,7 @@ const typeDefs = gql`
       )
     familyName: String!
     name: String!
+    email: String!
   }
 
   type Query {
@@ -56,7 +57,7 @@ const typeDefs = gql`
         RETURN n, COUNT(m) AS noOfMembers ORDER BY noOfMembers DESC
         """
       )
-      @auth(rules: [{ isAuthenticated: true }])
+    # @auth(rules: [{ isAuthenticated: true }])
     getFamily(email: String!): User
       @cypher(
         statement: """
