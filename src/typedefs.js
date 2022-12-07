@@ -67,19 +67,19 @@ const typeDefs = gql`
         """
       )
       @auth(rules: [{ isAuthenticated: true }])
-    searchUser(query: String, limit: Int, skip: Int): [User]
+    searchUser(query: String, limit: Int, page: Int): [User]
       @cypher(
         statement: """
         CALL db.index.fulltext.queryNodes('searchUser', $query) YIELD node, score
         WITH node, score
         RETURN node
-        ORDER BY node.name ASC
-        SKIP coalesce(toInteger($skip), 0)
-        LIMIT coalesce(toInteger($limit), 30)
+        ORDER BY toUpper(node.name) ASC
+        SKIP coalesce(coalesce($limit ,30) * ($page - 1), 0)
+        LIMIT coalesce($limit, 30)
         """
       )
-      @auth(rules: [{ isAuthenticated: true }])
-    searchFamily(query: String, limit: Int, skip: Int): [User!]!
+    # @auth(rules: [{ isAuthenticated: true }])
+    searchFamily(query: String, limit: Int, page: Int): [FamilyResp!]!
       @cypher(
         statement: """
         CALL db.index.fulltext.queryNodes('searchUser', $query) YIELD node, score
@@ -87,8 +87,8 @@ const typeDefs = gql`
         WHERE NOT (node) <-[:CHILDREN]-()
         RETURN node
         ORDER BY node.name ASC
-        SKIP coalesce(toInteger($skip), 0)
-        LIMIT coalesce(toInteger($limit), 30)
+        SKIP coalesce(coalesce($limit ,30) * ($page - 1), 0)
+        LIMIT coalesce($limit, 30)
         """
       )
       @auth(rules: [{ isAuthenticated: true }])
@@ -115,6 +115,7 @@ const typeDefs = gql`
         RETURN n
         """
       )
+      @auth(rules: [{ isAuthenticated: true }])
     removeRelationship(parentEmail: String!, childrenEmail: String!): Response!
       @cypher(
         statement: """
@@ -124,6 +125,7 @@ const typeDefs = gql`
         RETURN n
         """
       )
+      @auth(rules: [{ isAuthenticated: true }])
     # @auth(
     #   rules: [
     #     {
