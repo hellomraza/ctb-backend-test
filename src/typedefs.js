@@ -74,8 +74,8 @@ const typeDefs = gql`
         WITH node, score
         RETURN node
         ORDER BY node.name ASC
-        SKIP $skip
-        LIMIT $limit
+        SKIP coalesce(toInteger($skip), 0)
+        LIMIT coalesce(toInteger($limit), 30)
         """
       )
   }
