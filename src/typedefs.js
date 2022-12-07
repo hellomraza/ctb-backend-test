@@ -35,6 +35,14 @@ const typeDefs = gql`
   }
 
   type getAllFamiliesResponse {
+    noOfMembers: Int!
+      @cypher(
+        statement: """
+        MATCH (this)-[:CHILDREN*]->(n:User)
+        RETURN COUNT(n)
+        """
+      )
+    familyName: String!
     name: String!
   }
 
@@ -42,10 +50,19 @@ const typeDefs = gql`
     getAllFamilies: [getAllFamiliesResponse!]!
       @cypher(
         statement: """
-        MATCH (u:User)
-        WHERE NOT (u)<-[:CHILDREN]-()
-        WHERE size((u)-[:CHILDREN]->()) > 3
-        RETURN u.name as name
+        MATCH (n:User)
+        WHERE NOT (n) <-[:CHILDREN]-()
+        MATCH (n)-[:CHILDREN*]->(m:User)
+        RETURN n, COUNT(m) AS noOfMembers ORDER BY noOfMembers DESC
+        """
+      )
+      @auth(rules: [{ isAuthenticated: true }])
+    getFamily(email: String!): User
+      @cypher(
+        statement: """
+        MATCH (n:User)
+        WHERE n.email = $email
+        RETURN n
         """
       )
       @auth(rules: [{ isAuthenticated: true }])
@@ -77,8 +94,8 @@ const typeDefs = gql`
       @cypher(
         statement: """
         MATCH (n:User)
-        WHERE n.email = $input.email
-        CREATE (n)-[:CHILDREN]->(u:User {email: $input.email, password: $input.password, name: $input.name, familyName: $input.familyName})
+        WHERE n.email = $this.email
+        CREATE (n)-[:CHILDREN]->(u:User {input})
         RETURN u
         """
       )
@@ -95,73 +112,3 @@ const typeDefs = gql`
 `;
 
 module.exports = typeDefs;
-
-// type TopNode {
-//   topNodeName: User
-//     @cypher(
-//       statement: """
-//       MATCH (this) <-[:CHILDREN*]-(top)
-//       WHERE NOT (top) <-[:CHILDREN]-()
-//       RETURN top
-//       """
-//     )
-//   topNodeDistance: Int
-//     @cypher(
-//       statement: """
-//       MATCH (this)<-[:CHILDREN*1..]-(parents)
-//       RETURN count(parents)
-//       """
-//     )
-// }
-
-// input UserInput {
-//   name: String!
-//   email: String!
-//   password: String!
-//   surname: String!
-// }
-
-// type Query {
-//   user: User
-//     @cypher(statement: "MATCH (u:User { id: $auth.jwt.sub }) RETURN u")
-//     @auth(rules: [{ isAuthenticated: true }])
-//   getSiblings(id: ID!): [User!]!
-//     @cypher(
-//       statement: """
-//       MATCH (this {id:$id} )<-[:CHILDREN]-(parent)-[:CHILDREN]->(siblings)
-//       WHERE NOT siblings.id = $id
-//       RETURN siblings
-//       """
-
-// @cypher(
-//   # return jwt token
-//   statement: """
-//   MATCH (u:User { email: $email, password: $password })
-//   RETURN { token: apoc.create.jwt({ id: u.id, email:u.email}, "SECRET") }
-//   """
-// )
-// createUser(input: UserInput!): User
-// login(email: String!, password: String!): Token
-//  @cypher(
-//   # return jwt token
-//   statement: """
-//   MATCH (u:User { email: $email, password: $password })
-
-// addParentAndChild(parentId: ID!, childId: ID!): User
-//       @auth(
-//         rules: [
-//           {
-//             isAuthenticated: true
-//             operations: [CREATE, UPDATE]
-//             allow: { id: "$auth.jwt.sub" }
-//           }
-//         ]
-//       )
-//       @cypher(
-//         statement: """
-//         MATCH (parent {id: $parentId})
-//         MATCH (child {id: $childId})
-//         MERGE (parent)-[:CHILDREN]->(child)
-//         RETURN parent , child,
-//         """
-//       )
