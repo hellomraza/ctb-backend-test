@@ -34,7 +34,7 @@ const typeDefs = gql`
     password: String!
   }
 
-  type getAllFamiliesResponse {
+  type FamilyResp {
     noOfMembers: Int!
       @cypher(
         statement: """
@@ -48,7 +48,7 @@ const typeDefs = gql`
   }
 
   type Query {
-    getAllFamilies: [getAllFamiliesResponse!]!
+    getAllFamilies: [FamilyResp]
       @cypher(
         statement: """
         MATCH (n:User)
@@ -57,7 +57,7 @@ const typeDefs = gql`
         RETURN n, COUNT(m) AS noOfMembers ORDER BY noOfMembers DESC
         """
       )
-    # @auth(rules: [{ isAuthenticated: true }])
+      @auth(rules: [{ isAuthenticated: true }])
     getFamily(email: String!): User
       @cypher(
         statement: """
@@ -67,7 +67,7 @@ const typeDefs = gql`
         """
       )
       @auth(rules: [{ isAuthenticated: true }])
-    searchUser(query: String, limit: Int, skip: Int): [User!]!
+    searchUser(query: String, limit: Int, skip: Int): [User]
       @cypher(
         statement: """
         CALL db.index.fulltext.queryNodes('searchUser', $query) YIELD node, score
@@ -78,6 +78,20 @@ const typeDefs = gql`
         LIMIT coalesce(toInteger($limit), 30)
         """
       )
+      @auth(rules: [{ isAuthenticated: true }])
+    searchFamily(query: String, limit: Int, skip: Int): [User!]!
+      @cypher(
+        statement: """
+        CALL db.index.fulltext.queryNodes('searchUser', $query) YIELD node, score
+        WITH node, score
+        WHERE NOT (node) <-[:CHILDREN]-()
+        RETURN node
+        ORDER BY node.name ASC
+        SKIP coalesce(toInteger($skip), 0)
+        LIMIT coalesce(toInteger($limit), 30)
+        """
+      )
+      @auth(rules: [{ isAuthenticated: true }])
   }
 
   type Response {
@@ -92,12 +106,22 @@ const typeDefs = gql`
     signIn(input: SigniInInput!): Response!
     googleAuth(idToken: String!): Response!
     addChildren(input: UserInput!): Response!
+    addRelationship(email: String!, childrenEmail: String!): Response!
       @cypher(
         statement: """
-        MATCH (n:User)
-        WHERE n.email = $this.email
-        CREATE (n)-[:CHILDREN]->(u:User {input})
-        RETURN u
+        MATCH (n:User), (m:User)
+        WHERE n.email = $email AND m.email = $childrenEmail
+        MERGE (n)-[:CHILDREN]->(m)
+        RETURN n
+        """
+      )
+    removeRelationship(parentEmail: String!, childrenEmail: String!): Response!
+      @cypher(
+        statement: """
+        MATCH (n:User)-[r:CHILDREN]->(m:User)
+        WHERE n.email = $parentEmail AND m.email = $childrenEmail
+        DELETE r
+        RETURN n
         """
       )
     # @auth(
