@@ -69,9 +69,12 @@ const typeDefs = gql`
       @auth(rules: [{ isAuthenticated: true }])
     searchUser(query: String, limit: Int, page: Int): [User]
       @cypher(
+        # concat $query with '*' to make it a prefix search
         statement: """
-        CALL db.index.fulltext.queryNodes('searchUser', $query) YIELD node, score
-        WITH node, score
+        CALL db.index.fulltext.queryNodes('searchUser',$query +'*') YIELD node, score
+        RETURN node
+        UNION
+        CALL db.index.fulltext.queryNodes('searchUser', $query+'~') YIELD node, score
         RETURN node
         ORDER BY toUpper(node.name) ASC
         SKIP coalesce(coalesce($limit ,30) * ($page - 1), 0)
@@ -82,8 +85,11 @@ const typeDefs = gql`
     searchFamily(query: String, limit: Int, page: Int): [FamilyResp!]!
       @cypher(
         statement: """
-        CALL db.index.fulltext.queryNodes('searchUser', $query) YIELD node, score
-        WITH node, score
+        CALL db.index.fulltext.queryNodes('searchUser', $query+'*') YIELD node, score
+        WHERE NOT (node) <-[:CHILDREN]-()
+        RETURN node
+        UNION
+        CALL db.index.fulltext.queryNodes('searchUser', $query+'~') YIELD node, score
         WHERE NOT (node) <-[:CHILDREN]-()
         RETURN node
         ORDER BY node.name ASC
