@@ -1,8 +1,12 @@
 const jwt = require("jsonwebtoken");
 
 const GlobalController = {
-  createToken: ({ email }) => {
-    return jwt.sign({ sub: email }, process.env.JWT_SECRET);
+  createToken: ({ id }) => {
+    console.log(id);
+    return jwt.sign({ sub: id }, process.env.JWT_SECRET);
+  },
+  verifYToken: (token) => {
+    return jwt.verify(token, process.env.JWT_SECRET);
   },
 };
 

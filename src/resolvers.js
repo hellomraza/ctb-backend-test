@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const { ApolloError } = require("apollo-server");
 const { OAuth2Client } = require("google-auth-library");
 const GlobalController = require("./utils/globalcontroller");
+const { ogm, MyDriver } = require("./neo4j");
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const audience = process.env.GOOGLE_CLIENT_ID;
@@ -27,10 +28,10 @@ const signIn = async (_, { input }) => {
   try {
     const { email, password } = input;
     const [user] = await User.find({ where: { email } });
-    if (!user) new ApolloError("User not found", 404);
+    if (!user) new ApolloError("User does not exist", 401);
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) new ApolloError("Password is incorrect", 401);
-    const token = GlobalController.createToken({ email });
+    const token = GlobalController.createToken({ id: user.id });
     return { status: 200, message: "User logged in successfully", token };
   } catch (error) {
     console.log(error);
@@ -45,20 +46,22 @@ const googleAuth = async (_, { idToken }) => {
       return new ApolloError("Email not verified", 401);
     const { email, name, family_name, picture } = payload;
     const response = await User.find({ where: { email } });
+
     if (response.length === 0) {
       const user = { name, email, familyName: family_name, picture };
-      await User.create({ input: [user] });
-      const token = GlobalController.createToken({ email });
+      const { users } = await User.create({ input: [user] });
+      if (users.length === 0) new ApolloError("Something went wrong", 500);
+      const token = GlobalController.createToken({ id: users[0].id });
       return {
         status: 200,
         message: "User logged in successfully",
         token,
-        payload: user,
+        payload: users[0],
       };
     } else {
       const [user] = response;
       await User.update({ where: { email }, update: { picture } });
-      const token = GlobalController.createToken({ email });
+      const token = GlobalController.createToken({ id: user.id });
       return {
         status: 200,
         message: "User logged in successfully",
@@ -72,28 +75,34 @@ const googleAuth = async (_, { idToken }) => {
   }
 };
 
-// const getAllFamilies = async (_, _, context) => {
-//   try {
-//     const query = `
-//   MATCH (u:User)
-//   RETURN u
-// `;
-//     const users = await context.driver
-//       .session()
-//       .run(query)
-//       .then((response) =>
-//         response.records.map((record) => record.get("u").properties)
-//       );
-
-//     return users;
-//   } catch (error) {
-//     console.log(error);
-//     return new ApolloError(error.message, 500);
-//   }
-// };
-
-const resolvers = {
-  Mutation: { signUp, signIn, googleAuth },
+const syncContacts = async (_, { contacts = [] }, ctx) => {
+  try {
+    const id = ctx?.jwt?.sub;
+    const myConctacts = contacts.map((contact) => {
+      let fixNumber = contact.number.replace(/[^0-9]/g, "");
+      if (fixNumber.length === 10) fixNumber = `91${fixNumber}`;
+      return { name: contact.name, number: fixNumber };
+    });
+    console.log(myConctacts);
+    console.log(id);
+    const cypher = `
+    MATCH (me:User {id: $id})
+    FOREACH (contact in $contacts |
+    MERGE (knows:User{number:'918889701606'}) 
+    SET 
+    knows.name = 'rizwan'
+    MERGE (me)-[:KNOWS]->(knows)
+    )
+    RETURN $contacts
+    `;
+    const session = MyDriver.session();
+    const result = await session.run(cypher, { id, contacts: myConctacts });
+    session.close();
+    return true;
+  } catch (error) {
+    console.log(error);
+    return new ApolloError(error.message, 500);
+  }
 };
 
-module.exports = resolvers;
+module.exports = { Mutation: { signUp, signIn, googleAuth, syncContacts } };
