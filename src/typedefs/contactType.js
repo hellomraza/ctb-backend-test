@@ -10,7 +10,7 @@ const contactType = gql`
   }
 
   extend type Mutation {
-    syncContacts(contacts: [ContactInput]!): Boolean
+    syncContacts(contacts: [ContactInput]!): [User!]!
   }
 `;
 

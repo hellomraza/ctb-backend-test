@@ -26,27 +26,27 @@ Promise.all([neo4jGraphQL.getSchema(), ogm.init()]).then(([schema]) => {
     cache: "bounded",
     persistedQueries: false,
     context: ({ req }) => {
-      const openOperations = [
-        "signUp",
-        "signIn",
-        "googleAuth",
-        "IntrospectionQuery",
-      ];
-      const operationName = req?.body?.operationName || null;
-      if (openOperations.includes(operationName)) return { req };
-      const authHeader = req?.headers?.authorization || null;
-      if (!authHeader)
-        throw new AuthenticationError("You must be logged in to do this");
-      const token = authHeader.split(" ")[1] || null;
-      if (!token)
-        throw new AuthenticationError("You must be logged in to do this");
       try {
+        const openOperations = [
+          "signUp",
+          "signIn",
+          "googleAuth",
+          "IntrospectionQuery",
+        ];
+        const operationName = req?.body?.operationName || null;
+        if (openOperations.includes(operationName)) return { req };
+        const authHeader = req?.headers?.authorization || null;
+        if (!authHeader)
+          throw new AuthenticationError("You must be logged in to do this");
+        const token = authHeader.split(" ")[1] || null;
+        if (!token)
+          throw new AuthenticationError("You must be logged in to do this");
         const payload = GlobalController.verifYToken(token);
         console.log(payload);
+        return { req };
       } catch (error) {
         throw new AuthenticationError("You must be logged in to do this");
       }
-      return { req };
     },
   });
   server

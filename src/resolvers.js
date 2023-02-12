@@ -31,7 +31,7 @@ const signIn = async (_, { input }) => {
     if (!user) new ApolloError("User does not exist", 401);
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) new ApolloError("Password is incorrect", 401);
-    const token = GlobalController.createToken({ id: user.id });
+    const token = GlobalController.createToken({ id: user._id });
     return { status: 200, message: "User logged in successfully", token };
   } catch (error) {
     console.log(error);
@@ -45,13 +45,14 @@ const googleAuth = async (_, { idToken }) => {
     if (!payload.email_verified)
       return new ApolloError("Email not verified", 401);
     const { email, name, family_name, picture } = payload;
+    console.log(payload);
     const response = await User.find({ where: { email } });
 
     if (response.length === 0) {
       const user = { name, email, familyName: family_name, picture };
       const { users } = await User.create({ input: [user] });
       if (users.length === 0) new ApolloError("Something went wrong", 500);
-      const token = GlobalController.createToken({ id: users[0].id });
+      const token = GlobalController.createToken({ id: users[0]._id });
       return {
         status: 200,
         message: "User logged in successfully",
@@ -61,7 +62,7 @@ const googleAuth = async (_, { idToken }) => {
     } else {
       const [user] = response;
       await User.update({ where: { email }, update: { picture } });
-      const token = GlobalController.createToken({ id: user.id });
+      const token = GlobalController.createToken({ id: user._id });
       return {
         status: 200,
         message: "User logged in successfully",
@@ -81,24 +82,25 @@ const syncContacts = async (_, { contacts = [] }, ctx) => {
     const myConctacts = contacts.map((contact) => {
       let fixNumber = contact.number.replace(/[^0-9]/g, "");
       if (fixNumber.length === 10) fixNumber = `91${fixNumber}`;
-      return { name: contact.name, number: fixNumber };
+      return { name: contact.name, number: fixNumber, email: contact.email };
     });
-    console.log(myConctacts);
-    console.log(id);
     const cypher = `
-    MATCH (me:User {id: $id})
-    FOREACH (contact in $contacts |
-    MERGE (knows:User{number:'918889701606'}) 
+    MATCH (me:User {_id: $id})
+    UNWIND $contacts as contact
+    MERGE (knows:User{number:contact.number}) 
     SET 
-    knows.name = 'rizwan'
+    knows.name = CASE WHEN knows.name IS NOT NULL AND trim(knows.name) = '' THEN contact.name ELSE knows.name END,
+    knows.email = CASE WHEN knows.email IS NOT NULL AND trim(knows.email) = '' THEN contact.email ELSE knows.email END,
+    knows._id = coalesce(knows._id, randomUUID()),
+    knows.anonymous = coalesce(knows.anonymous, true)
+    with me, knows
     MERGE (me)-[:KNOWS]->(knows)
-    )
-    RETURN $contacts
+    RETURN knows
     `;
     const session = MyDriver.session();
     const result = await session.run(cypher, { id, contacts: myConctacts });
     session.close();
-    return true;
+    return result.records.map((record) => record._fields[0].properties);
   } catch (error) {
     console.log(error);
     return new ApolloError(error.message, 500);
